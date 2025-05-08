@@ -3,21 +3,41 @@ package main
 import (
 	"bufio"
 	"crypto/tls"
+	// "crypto/tls"
 	"net"
 
-	// "crypto/x509"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
-	// "os/signal"
-	// "syscall"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/joho/godotenv"
 )
 
 const socketPath = "/tmp/waybar-printer.sock"
+
+type Config struct {
+	Printer struct {
+		Address    string `json:"address"`
+		AccessCode string `json:"access_code"`
+		MQTTTopic  string `json:"mqtt_topic"`
+		Serial     string `json:"serial"`
+	}
+}
+
+func LoadConfig(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %s", path)
+	}
+
+	var cfg Config
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("failed to parse config: %w", err)
+	}
+
+	return &cfg, nil
+}
 
 type PrinterStatus struct {
 	State   string `json:"state"`
@@ -67,19 +87,27 @@ func main() {
 		}
 	}()
 
-	err = godotenv.Load()
+	cfgPath, err := os.UserConfigDir()
 	if err != nil {
-		panic("Error while loading .env file")
+		log.Printf("Unable to get the config directory")
+		return
 	}
+
+	cfg, err := LoadConfig(fmt.Sprint(cfgPath, "/waybar-printer/config.json"))
+	if err != nil {
+		log.Printf("Something went wrong with LoadConfig: %v", err)
+		return
+	}
+
 	tlsConfig := &tls.Config{
 		// RootCAs:            caCertPool,
 		InsecureSkipVerify: true,
 	}
 
-	opts := mqtt.NewClientOptions().AddBroker(os.Getenv("BL_SSL_ADDR"))
+	opts := mqtt.NewClientOptions().AddBroker(cfg.Printer.Address)
 	opts.SetClientID("waybar-printer-status")
 	opts.SetUsername("bblp")
-	opts.SetPassword(os.Getenv("BL_ACCESS_CODE"))
+	opts.SetPassword(cfg.Printer.AccessCode)
 	opts.SetTLSConfig(tlsConfig)
 
 	client := mqtt.NewClient(opts)
@@ -88,7 +116,7 @@ func main() {
 		log.Fatal("MQTT connect failed:", token.Error())
 	}
 
-	client.Subscribe("#", 0, func(c mqtt.Client, msg mqtt.Message) {
+	client.Subscribe(cfg.Printer.MQTTTopic, 0, func(c mqtt.Client, msg mqtt.Message) {
 		// log.Printf("[%s]: %s", msg.Topic(), msg.Payload())
 		var root map[string]interface{}
 		if err := json.Unmarshal(msg.Payload(), &root); err != nil {
@@ -98,25 +126,29 @@ func main() {
 
 		printObj, ok := root["print"].(map[string]interface{})
 		if !ok {
-			log.Fatal("Missing or invalid 'print' object")
+			log.Printf("[%s]: %s", msg.Topic(), msg.Payload())
+			log.Printf("Missing or invalid 'print' object")
 			return
 		}
 
 		gcodeState, ok := printObj["gcode_state"].(string)
 		if !ok {
-			log.Fatal("Missing or invalid 'gcode_state'")
+			log.Printf("[%s]: %s", msg.Topic(), msg.Payload())
+			log.Printf("Missing or invalid 'gcode_state'")
 			return
 		}
 
 		bedTemp, ok := printObj["bed_temper"].(float64)
 		if !ok {
-			log.Fatal("Missing or invalid 'bed_temper'")
+			log.Printf("[%s]: %s", msg.Topic(), msg.Payload())
+			log.Printf("Missing or invalid 'bed_temper'")
 			return
 		}
 
 		printPercentage, ok := printObj["mc_percent"].(float64)
 		if !ok {
-			log.Fatal("Missing or invalid 'mc_percent'")
+			log.Printf("[%s]: %s", msg.Topic(), msg.Payload())
+			log.Printf("Missing or invalid 'mc_percent'")
 			return
 		}
 		// var status PrinterStatus
@@ -171,59 +203,3 @@ func main() {
 	// <-sigs
 	// client.Disconnect(250)
 }
-
-/*
-func onMessage(client mqtt.Client, msg mqtt.Message) {
-	// log.Printf("[%s]: %s", msg.Topic(), msg.Payload())
-	var root map[string]interface{}
-	if err := json.Unmarshal(msg.Payload(), &root); err != nil {
-		log.Println("JSON parse error: ", err)
-		return
-	}
-
-	printObj, ok := root["print"].(map[string]interface{})
-	if !ok {
-		log.Fatal("Missing or invalid 'print' object")
-		return
-	}
-
-	gcodeState, ok := printObj["gcode_state"].(string)
-	if !ok {
-		log.Fatal("Missing or invalid 'gcode_state'")
-	}
-
-	bedTemp, ok := printObj["bed_temper"].(float64)
-	if !ok {
-		log.Fatal("Missing or invalid 'bed_temper'")
-	}
-
-	printPercentage, ok := printObj["mc_percent"].(float64)
-	if !ok {
-		log.Fatal("Missing or invalid 'mc_percent'")
-	}
-	// var status PrinterStatus
-
-	// 3D Print Icons: 󰹛, 󱇀, 󱢸, 󰹜, 󱇁, 󱢹
-	// Apparently there are 5 gcode_state values RUNNING, FINISH, PREPARE, PAUSE, or FAILED
-	var printIcon string
-	switch gcodeState {
-	case "RUNNING":
-		printIcon = "󰹛"
-	case "FINISH":
-		printIcon = "󰹜"
-	default:
-		printIcon = "󱇁"
-	}
-
-	output := map[string]interface{}{
-		"text":    fmt.Sprintf("%s %0.0f%% (%0.2f°C)", printIcon, printPercentage, bedTemp),
-		"tooltip": fmt.Sprintf("Job: %s\nTemp: %0.2f°C", "tmp", bedTemp),
-		// "class":   "",
-	}
-
-	jsonOutput, err := json.Marshal(output)
-	if err == nil {
-		fmt.Println(string(jsonOutput))
-	}
-}
-*/
