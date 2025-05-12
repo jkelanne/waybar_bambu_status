@@ -162,9 +162,20 @@ func handleMQTTMessage(msg mqtt.Message, clients map[net.Conn]struct{}) {
 			log.Println("Something went wrong with convertTime()")
 		}
 		output = map[string]any{
-			"text":    fmt.Sprintf("%s %0.0f%% (%s)", printIcon, printPercentage, remTime),
-			"tooltip": fmt.Sprintf("Job: %s\nTemp: %0.2f°C", subtaskName, bedTemp),
-			"class":   "running",
+			"text": fmt.Sprintf("%s %0.0f%% (%s)", printIcon, printPercentage, remTime),
+			"tooltip": fmt.Sprintf("Job: %s\n%s Bed: %0.2f/%0.2f°C\n%s Nozzle: %0.2f/%0.2f°C\n%s Chamber: %0.2f°C\n  Layer: %d/%d",
+				subtaskName,
+				TemperatureIcon(bedTemp, bedTargetTemp),
+				bedTemp,
+				bedTargetTemp,
+				TemperatureIcon(nozzleTemp, nozzleTargetTemp),
+				nozzleTemp,
+				nozzleTargetTemp,
+				TemperatureIcon(24.0, 100.0),
+				chamberTemp,
+				layerNum,
+				totalLayerNum),
+			"class": "running",
 		}
 	case "FINISH":
 		printIcon = "󰹜"
