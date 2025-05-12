@@ -8,15 +8,38 @@ I've tested the widget only with Bambu Lab X1C. There are some differences in th
 
 The widget can be used with multiple monitors. Only one instance of the program will handle the MQTT messages; passing it to other instances by unix socket at `/tmp/waybar-bambu-status.sock`.
 
+
+## 🛠️ Installation (Go Required)
+You can install `waybar_bambu_status` directly if you have Go installed:
+```bash
+go install github.com/jkelanne/waybar_bambu_status@latest
+```
+The default installation path if `$GOBIN` is not set is `$HOME/go/bin/`
+### With path
+```bash
+export GOBIN=$HOME/.local/bin
+go install github.com/jkelanne/waybar_bambu_status@latest
+```
+
+## 📦 Option 2: **Manual Build**
+Clone and build manually:
+
+```bash
+git clone https://github.com/jkelanne/waybar_bambu_status.git
+cd waybar_bambu_status
+go build -o waybar-bambu-status
+```
+
 # Configuration
 `$HOME/.config/waybar-bambu-status/config.json`
 ## Example
+Access code and address can be read from the X1C menu `Configuration > General` and `Configuration > Network`. Serial number is not currently used. 
 ```json
 {
 	"printer": {
-		"access_code": "",
+		"access_code": "12345678",
 		"serial": "",
-		"address": "ssl://:8883",
+		"address": "ssl://192.168.1.123:8883",
 		"mqtt_topic": "#",
 		"username": "bblp",
 		"client_id": "waybar-bambu-status"
