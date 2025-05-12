@@ -24,6 +24,6 @@ go.work.sum
 # env file
 .env
 
-waybar_printer_status
+waybar_bambu_status
 ca_cert.pem
 output.json
