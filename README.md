@@ -1,4 +1,7 @@
 # waybar-printer-status
+![Idle Status](screenshots/bambu_status_idle.png)
+![Running Status](screenshots/bambu_status_running.png)
+
 A simple widget for displaying the Bambu Lab printer status in waybar.
 
 I've tested the widget only with Bambu Lab X1C. There are some differences in the MQTT between Bambu Lab printer models, so the software might not work with other models.
