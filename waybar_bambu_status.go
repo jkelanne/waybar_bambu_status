@@ -129,8 +129,8 @@ func handleMQTTMessage(msg mqtt.Message, clients map[net.Conn]struct{}) {
 	chamberTemp, _ := printObj["chamber_temper"].(float64)
 	nozzleTargetTemp, _ := printObj["nozzle_target_temper"].(float64)
 	nozzleTemp, _ := printObj["nozzle_temper"].(float64)
-	layerNum, _ := printObj["layer_num"].(int32)
-	totalLayerNum, _ := printObj["total_layer_num"].(int32)
+	layerNum, _ := printObj["layer_num"].(float64)
+	totalLayerNum, _ := printObj["total_layer_num"].(float64)
 
 	printPercentage, ok := printObj["mc_percent"].(float64)
 	if !ok {
@@ -163,7 +163,7 @@ func handleMQTTMessage(msg mqtt.Message, clients map[net.Conn]struct{}) {
 		}
 		output = map[string]any{
 			"text": fmt.Sprintf("%s %0.0f%% (%s)", printIcon, printPercentage, remTime),
-			"tooltip": fmt.Sprintf("Job: %s\n%s Bed: %0.2f/%0.2f°C\n%s Nozzle: %0.2f/%0.2f°C\n%s Chamber: %0.2f°C\n  Layer: %d/%d",
+			"tooltip": fmt.Sprintf("Job: %s\n%s Bed: %0.2f/%0.2f°C\n%s Nozzle: %0.2f/%0.2f°C\n%s Chamber: %0.2f°C\n  Layer: %0.0f/%0.0f",
 				subtaskName,
 				TemperatureIcon(bedTemp, bedTargetTemp),
 				bedTemp,
@@ -181,7 +181,7 @@ func handleMQTTMessage(msg mqtt.Message, clients map[net.Conn]struct{}) {
 		printIcon = "󰹜"
 		output = map[string]any{
 			"text": fmt.Sprintf("%s IDLE", printIcon),
-			"tooltip": fmt.Sprintf("Job: %s\n%s Bed: %0.2f/%0.2f°C\n%s Nozzle: %0.2f/%0.2f°C\n%s Chamber: %0.2f°C\n  Layer: %d/%d",
+			"tooltip": fmt.Sprintf("Job: %s\n%s Bed: %0.2f/%0.2f°C\n%s Nozzle: %0.2f/%0.2f°C\n%s Chamber: %0.2f°C\n  Layer: %0.0f/%0.0f",
 				subtaskName,
 				TemperatureIcon(bedTemp, bedTargetTemp),
 				bedTemp,
