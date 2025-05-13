@@ -57,7 +57,7 @@ Access code and address can be read from the X1C menu `Configuration > General` 
 ## `bambu_status`-module configuration
 ```json
     "custom/bambu_status" : {
-        "exec": "$HOME/bin/waybar_bambu_status",
+        "exec": "$HOME/go/bin/waybar_bambu_status",
         "return-type": "json"
     }
 
